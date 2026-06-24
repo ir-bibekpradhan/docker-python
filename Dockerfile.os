@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=ubuntu:22.04
+ARG BASE_IMAGE=rockylinux:8
 
 # ---- Build stage ----
 FROM ${BASE_IMAGE} AS builder
