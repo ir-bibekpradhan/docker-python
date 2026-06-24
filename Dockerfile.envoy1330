@@ -1,6 +1,4 @@
-ARG BASE_IMAGE=envoyproxy/envoy:v1.33.0
-
-FROM ${BASE_IMAGE}
+FROM envoyproxy/envoy:v1.33.0
 
 WORKDIR /app
 
