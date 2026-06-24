@@ -9,22 +9,15 @@ RUN python -m pip install --upgrade pip setuptools wheel && \
     python -m pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 # ---- Runtime stage ----
-FROM node:12
+FROM node:12-bullseye
 
 WORKDIR /app
 
-# Copy Python runtime from Python image
 COPY --from=pybuilder /usr/local /usr/local
-
-# Copy installed Python packages
 COPY --from=pybuilder /install /usr/local
-
-# Copy application source
 COPY src/ ./src/
 
-# Create non-root user without apt
-RUN useradd --create-home appuser || adduser -D appuser
-
+RUN useradd --create-home appuser
 USER appuser
 
 ENV APP_NAME=docker-python \
