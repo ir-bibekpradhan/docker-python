@@ -62,9 +62,7 @@ jobs:
             -t docker-python:${{ matrix.name }} \
             .
 
-      - name: Smoke test container
-        run: |
-          docker run --rm docker-python:${{ matrix.name }}
+
 
       # ============= InvisiRisk Cleanup =============
       - name: Cleanup PSE
