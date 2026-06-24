@@ -1,29 +1,11 @@
-# ---- Python build stage ----
-FROM python:3.12-slim-bookworm AS pybuilder
+FROM node:12
 
 WORKDIR /app
 
 COPY requirements.txt .
-
-RUN python -m pip install --upgrade pip setuptools wheel && \
-    python -m pip install --no-cache-dir --prefix=/install -r requirements.txt
-
-# ---- Runtime stage ----
-FROM node:12-bullseye
-
-WORKDIR /app
-
-COPY --from=pybuilder /usr/local /usr/local
-COPY --from=pybuilder /install /usr/local
 COPY src/ ./src/
 
-RUN useradd --create-home appuser
-USER appuser
-
 ENV APP_NAME=docker-python \
-    APP_ENV=production \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PATH="/usr/local/bin:${PATH}"
+    APP_ENV=production
 
-CMD ["python", "-m", "src.app.main"]
+CMD ["node", "--version"]
