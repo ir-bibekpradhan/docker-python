@@ -1,0 +1,15 @@
+ARG BASE_IMAGE=envoyproxy/envoy:v1.33.0
+
+FROM ${BASE_IMAGE}
+
+WORKDIR /app
+
+COPY requirements.txt .
+COPY src/ ./src/
+
+ENV APP_NAME=docker-python \
+    APP_ENV=production \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+CMD ["envoy", "--version"]
