@@ -15,42 +15,34 @@ jobs:
           - name: rockylinux-8
             base_image: rockylinux:8
             dockerfile: Dockerfile.os
-            allow_failure: true
 
           - name: python-312-slim-bookworm
             base_image: python:3.12-slim-bookworm
             dockerfile: Dockerfile.python
-            allow_failure: false
 
           - name: python-312
             base_image: python:3.12
             dockerfile: Dockerfile.python
-            allow_failure: false
 
           - name: python-312-alpine
             base_image: python:3.12-alpine
             dockerfile: Dockerfile.alpine
-            allow_failure: true
 
           - name: python-395
             base_image: python:3.9.5
             dockerfile: Dockerfile.python
-            allow_failure: true
 
           - name: ubuntu-2204
             base_image: ubuntu:22.04
             dockerfile: Dockerfile.os
-            allow_failure: true
 
           - name: node-12
             base_image: node:12
             dockerfile: Dockerfile.node12
-            allow_failure: true
 
           - name: envoy-1330
             base_image: envoyproxy/envoy:v1.33.0
             dockerfile: Dockerfile.envoy
-            allow_failure: true
 
     steps:
       # ============= InvisiRisk Setup =============
@@ -69,29 +61,24 @@ jobs:
           fetch-depth: 0
 
       - name: Build Docker image
-        id: docker_build
-        continue-on-error: ${{ matrix.allow_failure }}
         run: |
           docker build \
             -f ${{ matrix.dockerfile }} \
             --build-arg BASE_IMAGE=${{ matrix.base_image }} \
-            --build-arg BUILDKIT_SYNTAX=public.ecr.aws/w3c0c0n7/invisirisk/baf-buildkit:latest \
+            --build-arg BUILDKIT_SYNTAX=public.ecr.aws/w3c0c0n7/invisirisk/baf-buildkit:dev-test \
             --secret id=pse-ca,src=/etc/ssl/certs/pse.pem \
             --build-arg PSE_PROXY=http://${PSE_PROXY_IP}:3128 \
             -t docker-python:${{ matrix.name }} \
             .
 
-      - name: Fail required build if unsuccessful
-        if: steps.docker_build.outcome == 'failure' && matrix.allow_failure == false
-        run: exit 1
-
       - name: Smoke test container
-        id: smoke_test
-        continue-on-error: ${{ matrix.allow_failure }}
         run: |
           docker run --rm docker-python:${{ matrix.name }}
 
-      - name: Fail required smoke test if unsuccessful
-        if: steps.smoke_test.outcome == 'failure' && matrix.allow_failure == false
-        run: exit 1
-
+      # ============= InvisiRisk Cleanup =============
+      - name: Cleanup PSE
+        if: always()
+        uses: invisirisk/pse-action@latest
+        with:
+          cleanup: "true"
+      # ============= InvisiRisk Setup End =============
