@@ -35,7 +35,7 @@ COPY --from=builder /install /usr/local
 COPY src/ ./src/
 
 RUN useradd --create-home appuser
-USER appuser
+
 
 ENV APP_NAME=docker-python \
     APP_ENV=production \
