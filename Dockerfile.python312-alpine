@@ -30,12 +30,15 @@ RUN apk add --no-cache \
 COPY --from=builder /install /usr/local
 COPY src/ ./src/
 
+# create the user early
 RUN adduser -D appuser
-USER appuser
 
 ENV APP_NAME=docker-python \
     APP_ENV=production \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
+
+# drop privileges — everything after this runs as appuser    
+USER appuser
 
 CMD ["python", "-m", "src.app.main"]
