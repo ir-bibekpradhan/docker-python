@@ -12,11 +12,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - base_image: rockylinux:8
+          - name: rockylinux-8
+            base_image: rockylinux:8
             dockerfile: Dockerfile.os
             allow_failure: true
 
-          - base_image: ubuntu:22.04
+          - name: ubuntu-2240
+            base_image: ubuntu:22.04
             dockerfile: Dockerfile.os
             allow_failure: true
 
