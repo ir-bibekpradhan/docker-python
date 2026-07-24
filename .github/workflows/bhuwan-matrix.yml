@@ -1,0 +1,64 @@
+name: Docker Build Matrix
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: rockylinux-8
+            base_image: rockylinux:8
+            dockerfile: Dockerfile.os
+            allow_failure: true
+
+          - name: ubuntu-2204
+            base_image: ubuntu:22.04
+            dockerfile: Dockerfile.os
+            allow_failure: true
+
+
+    steps:
+      # ============= InvisiRisk Setup =============
+      - name: Setup PSE
+        uses: invisirisk/pse-action@latest
+        with:
+          api_url: "https://app.dev.invisirisk.com"
+          app_token: ${{ secrets.IR_API_KEY }}
+      # ============= InvisiRisk Setup End =============
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Build Docker image
+        id: docker_build
+        continue-on-error: ${{ matrix.allow_failure }}
+        run: |
+          docker build \
+            -f ${{ matrix.dockerfile }} \
+            --build-arg BASE_IMAGE=${{ matrix.base_image }} \
+            --build-arg BUILDKIT_SYNTAX=public.ecr.aws/w3c0c0n7/invisirisk/baf-buildkit:latest \
+            --secret id=pse-ca,src=${PSE_CA_CERT_PATH} \
+            --build-arg PSE_PROXY=http://${PSE_PROXY_IP}:3128 \
+            -t docker-python:${{ matrix.name }} \
+            .
+      - name: Fail required build if unsuccessful
+        if: steps.docker_build.outcome == 'failure' && matrix.allow_failure == false
+        run: exit 1
+
+      - name: Smoke test container
+        id: smoke_test
+        continue-on-error: ${{ matrix.allow_failure }}
+        run: |
+          docker run --rm docker-python:${{ matrix.name }}
+      - name: Fail required smoke test if unsuccessful
+        if: steps.smoke_test.outcome == 'failure' && matrix.allow_failure == false
+        run: exit 1
