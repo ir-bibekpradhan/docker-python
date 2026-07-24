@@ -5,20 +5,18 @@ on:
 
 jobs:
   build:
-    name: Build ${{ matrix.name }}
+    name: Build ${{ matrix.base_image }}
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
         include:
-          - name: rockylinux-8
-            base_image: rockylinux:8
+          - base_image: rockylinux:8
             dockerfile: Dockerfile.os
             allow_failure: true
 
-          - name: ubuntu-2204
-            base_image: ubuntu:22.04
+          - base_image: ubuntu:22.04
             dockerfile: Dockerfile.os
             allow_failure: true
 
