@@ -37,8 +37,8 @@ jobs:
       - name: Setup PSE
         uses: invisirisk/pse-action@latest
         with:
-          api_url: https://app.stage.invisirisk.com
-          app_token: ${{ secrets.IR_API_KEY }}
+          api_url: https://app.invisirisk.com
+          app_token: ${{ secrets.IR_CENTOS8_API_KEY }}
           workdir: .centos8-sanity
 
       - name: Build CentOS 8 image through IR
