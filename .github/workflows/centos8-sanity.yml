@@ -1,0 +1,57 @@
+name: CentOS 8 BAF Sanity
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  centos8:
+    name: CentOS 8 Docker sanity through IR
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare CentOS 8 sanity fixture
+        run: |
+          mkdir -p .centos8-sanity
+          printf 'six==1.16.0\n' > .centos8-sanity/requirements.txt
+          cat > .centos8-sanity/Dockerfile <<'DOCKERFILE'
+          FROM centos:8
+          # CentOS Linux 8 packages are archived in the 8.5.2111 vault.
+          RUN sed -i \
+                -e 's|^mirrorlist=|#mirrorlist=|' \
+                -e 's|^#baseurl=http://mirror.centos.org/$contentdir/$releasever/|baseurl=https://vault.centos.org/8.5.2111/|' \
+                /etc/yum.repos.d/CentOS-Linux-*.repo \
+              && dnf install -y python38 python38-pip ca-certificates \
+              && dnf clean all
+          WORKDIR /app
+          COPY requirements.txt ./
+          RUN python3.8 -m pip install --no-cache-dir -r requirements.txt
+          CMD ["python3.8", "-c", "import platform, six; print(platform.platform()); print('six=' + six.__version__); assert six.__version__ == '1.16.0'"]
+          DOCKERFILE
+
+      - name: Setup PSE
+        uses: invisirisk/pse-action@latest
+        with:
+          api_url: https://app.stage.invisirisk.com
+          app_token: ${{ secrets.IR_API_KEY }}
+          workdir: .centos8-sanity
+
+      - name: Build CentOS 8 image through IR
+        run: |
+          DOCKER_BUILDKIT=1 docker build --pull --no-cache --progress=plain \
+            --build-arg BUILDKIT_SYNTAX=public.ecr.aws/w3c0c0n7/invisirisk/baf-buildkit:latest \
+            --secret "id=pse-ca,src=${PSE_CA_CERT_PATH}" \
+            --build-arg "PSE_PROXY=http://${PSE_PROXY_IP}:3128" \
+            -t ir-centos8-sanity:latest .centos8-sanity
+
+      - name: Confirm CentOS version and installed package
+        run: |
+          docker run --rm --entrypoint cat ir-centos8-sanity:latest /etc/os-release
+          docker run --rm ir-centos8-sanity:latest
+
+      # pse-action runs its cleanup automatically as a post-job action.
